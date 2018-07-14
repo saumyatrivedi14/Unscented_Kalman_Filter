@@ -36,6 +36,9 @@ public:
   
   ///* predicted sigma points matrix
   MatrixXd Xsig_pred_;
+  
+  // Process Covariance Matrix
+  MatrixXd Q;
 
   ///* time when the state is true, in us
   long long time_us_;

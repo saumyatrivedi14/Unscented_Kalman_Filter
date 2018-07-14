@@ -66,7 +66,7 @@ UKF::UKF() {
   n_sig_ = 2*n_aug_+1;
   
   // sigma points spreading parameter
-  lambda_ = 3 - n_x_;
+  lambda_ = 3 - n_aug_;
   
   // weights vector
   weights_ = VectorXd(n_sig_);
@@ -114,17 +114,17 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
   if ((meas_package.sensor_type_ == MeasurementPackage::RADAR && use_radar_) ||
       (meas_package.sensor_type_ == MeasurementPackage::LASER && use_laser_))
   {
-	  if (is_initialized_){
+	  if (!is_initialized_){
 			if (meas_package.sensor_type_ == MeasurementPackage::RADAR) {
-				float rho = meas_package.raw_measurements_(0);
-				float phi = meas_package.raw_measurements_(1);
-				float rho_dot = meas_package.raw_measurements_(2);
+				double rho = meas_package.raw_measurements_(0);
+				double phi = meas_package.raw_measurements_(1);
+				double rho_dot = meas_package.raw_measurements_(2);
 
 				x_ << rho*cos(phi), rho*sin(phi), rho_dot, 0.0, 0.0;
 			}
 			else if (meas_package.sensor_type_ == MeasurementPackage::LASER) {
-				float px = meas_package.raw_measurements_(0);
-				float py = meas_package.raw_measurements_(1);
+				double px = meas_package.raw_measurements_(0);
+				double py = meas_package.raw_measurements_(1);
 				
 				x_ << px, py, 0.0, 0.0, 0.0;
 			}
@@ -319,8 +319,8 @@ void UKF::UpdateRadar(MeasurementPackage meas_package) {
       
 	  double rho, phi, rho_dot;
 	  
-      rho = sqrt(pow(px,2)+pow(py,2));
-      phi = atan(py/px);
+      rho = sqrt(px*px + py*py);
+      phi = atan2(py,px);
 	  if (rho != 0){
 		rho_dot = (px*cos(yaw)*v + py*sin(yaw)*v)/rho;
 	  }
@@ -329,9 +329,11 @@ void UKF::UpdateRadar(MeasurementPackage meas_package) {
 	  }
 	  
 	  Zsig.col(i) << rho, phi, rho_dot;
-	  
-	  //calculate mean predicted measurement
-      z_pred += weights_(i) * Zsig.col(i);
+  }
+  
+  for (int i=0; i<n_sig_; i++){
+	//calculate mean predicted measurement
+    z_pred += weights_(i) * Zsig.col(i);
   }
   
   //calculate measurement covariance matrix S
@@ -339,8 +341,8 @@ void UKF::UpdateRadar(MeasurementPackage meas_package) {
       VectorXd diff_z = Zsig.col(i)-z_pred;
       
 	  // normalize angle
-      while(diff_z(1) > M_PI){diff_z(1) -= 2.*M_PI;}
-      while(diff_z(1) < -M_PI){diff_z(1) += 2.*M_PI;}
+      while(diff_z(1) > M_PI) diff_z(1) -= 2.*M_PI;
+      while(diff_z(1) < -M_PI) diff_z(1) += 2.*M_PI;
       
       S += weights_(i) * diff_z *diff_z.transpose();
   }
@@ -363,8 +365,8 @@ void UKF::UpdateRadar(MeasurementPackage meas_package) {
 	  //normalize angles
       while(diff_x(3) > M_PI){diff_x(3) -= 2.*M_PI;}
       while(diff_x(3) < -M_PI){diff_x(3) += 2.*M_PI;}
-      while(diff_z(1) > M_PI){diff_z(1) -= 2.*M_PI;}
-      while(diff_z(1) < -M_PI){diff_z(1) += 2.*M_PI;}
+      while(diff_z(1) > M_PI) diff_z(1) -= 2.*M_PI;
+      while(diff_z(1) < -M_PI) diff_z(1) += 2.*M_PI;
       
       Tc += weights_(i) * diff_x * diff_z.transpose();
   }
@@ -376,8 +378,8 @@ void UKF::UpdateRadar(MeasurementPackage meas_package) {
   VectorXd diff_z_err = z - z_pred;
   
   //normalizing
-  while(diff_z_err(1) > M_PI){diff_z_err(1) -= 2.*M_PI;}
-  while(diff_z_err(1) < -M_PI){diff_z_err(1) += 2.*M_PI;}
+  while(diff_z_err(1) > M_PI) diff_z_err(1) -= 2.*M_PI;
+  while(diff_z_err(1) < -M_PI) diff_z_err(1) += 2.*M_PI;
   
   x_ += K*diff_z_err;
   P_ -= K * S * K.transpose();
