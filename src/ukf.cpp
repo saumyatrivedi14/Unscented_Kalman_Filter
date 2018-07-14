@@ -28,7 +28,7 @@ UKF::UKF() {
   P_.setIdentity();
 
   // Process noise standard deviation longitudinal acceleration in m/s^2
-  std_a_ = 2;
+  std_a_ = 2.5;
 
   // Process noise standard deviation yaw acceleration in rad/s^2
   std_yawdd_ = 0.5;
@@ -54,7 +54,7 @@ UKF::UKF() {
   is_initialized_ = false;
   
   // start time in us
-  time_us_ = 0;
+  time_us_ = 0.0;
   
   // number of states = 5
   n_x_ = 5;
@@ -120,7 +120,7 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
 				float phi = meas_package.raw_measurements_(1);
 				float rho_dot = meas_package.raw_measurements_(2);
 
-				x_ << rho*cos(phi), rho*sin(phi), rho_dot, 0.0, 0.0;							
+				x_ << rho*cos(phi), rho*sin(phi), rho_dot, 0.0, 0.0;
 			}
 			else if (meas_package.sensor_type_ == MeasurementPackage::LASER) {
 				float px = meas_package.raw_measurements_(0);
@@ -376,8 +376,8 @@ void UKF::UpdateRadar(MeasurementPackage meas_package) {
   VectorXd diff_z_err = z - z_pred;
   
   //normalizing
-  while(diff_z_err(1) > M_PI){diff_z_err(1) -= 2*M_PI;}
-  while(diff_z_err(1) < -M_PI){diff_z_err(1) += 2*M_PI;}
+  while(diff_z_err(1) > M_PI){diff_z_err(1) -= 2.*M_PI;}
+  while(diff_z_err(1) < -M_PI){diff_z_err(1) += 2.*M_PI;}
   
   x_ += K*diff_z_err;
   P_ -= K * S * K.transpose();
